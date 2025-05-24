@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -12,6 +13,8 @@ import {
 import { Button } from '../ui/button';
 import { FilterX } from 'lucide-react';
 
+const ALL_ITEMS_VALUE = "__ALL__"; // Special value for "All" options
+
 export function ProductFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -20,10 +23,10 @@ export function ProductFilters() {
 
   const handleFilterChange = (type: 'category' | 'material', value: string) => {
     const current = new URLSearchParams(Array.from(searchParams.entries()));
-    if (value) {
-      current.set(type, value);
-    } else {
+    if (value === ALL_ITEMS_VALUE) { // If "All" is selected for this filter type
       current.delete(type);
+    } else {
+      current.set(type, value);
     }
     const query = current.toString();
     router.push(`/products${query ? `?${query}` : ''}`);
@@ -33,8 +36,8 @@ export function ProductFilters() {
     router.push('/products');
   };
 
-  const selectedCategory = searchParams.get('category') || '';
-  const selectedMaterial = searchParams.get('material') || '';
+  const selectedCategory = searchParams.get('category') || ALL_ITEMS_VALUE;
+  const selectedMaterial = searchParams.get('material') || ALL_ITEMS_VALUE;
 
   return (
     <div className="mb-8 p-6 bg-card rounded-lg shadow-md">
@@ -46,7 +49,7 @@ export function ProductFilters() {
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value={ALL_ITEMS_VALUE}>All Categories</SelectItem>
               {categories.map(category => (
                 <SelectItem key={category.id} value={category.name}>
                   {category.name}
@@ -62,7 +65,7 @@ export function ProductFilters() {
               <SelectValue placeholder="All Materials" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Materials</SelectItem>
+              <SelectItem value={ALL_ITEMS_VALUE}>All Materials</SelectItem>
               {materials.map(material => (
                 <SelectItem key={material} value={material}>
                   {material}
