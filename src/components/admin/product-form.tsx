@@ -1,7 +1,8 @@
 // @ts-nocheck
 'use client';
 
-import { useActionState, useFormStatus } from 'react'; // Changed from 'react-dom'
+import { useActionState } from 'react'; 
+import { useFormStatus } from 'react-dom'; // Corrected import for useFormStatus
 import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -42,7 +43,7 @@ export function ProductForm({ product }: ProductFormProps) {
   }, []);
 
   const action = product ? updateProductAction.bind(null, product.id) : addProductAction;
-  const [state, formAction] = useActionState(action, initialState); // Changed from useFormState
+  const [state, formAction] = useActionState(action, initialState); 
 
   useEffect(() => {
     if (state.message && !state.errors) { // Success message

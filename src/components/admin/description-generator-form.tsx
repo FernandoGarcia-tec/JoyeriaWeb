@@ -1,7 +1,8 @@
 // @ts-nocheck
 'use client';
 
-import { useActionState, useFormStatus } from 'react'; // Changed from 'react-dom'
+import { useActionState } from 'react'; 
+import { useFormStatus } from 'react-dom'; // Corrected import for useFormStatus
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -39,7 +40,7 @@ function SubmitButton() {
 }
 
 export function DescriptionGeneratorForm() {
-  const [state, formAction] = useActionState(generateDescriptionAction, initialState); // Changed from useFormState
+  const [state, formAction] = useActionState(generateDescriptionAction, initialState); 
   const { toast } = useToast();
 
   useEffect(() => {
