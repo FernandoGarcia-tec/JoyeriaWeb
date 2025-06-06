@@ -16,7 +16,7 @@ interface ProductsPageProps {
   };
 }
 
-export default function ProductsPage({ searchParams }: ProductsPageProps) {
+export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const { category, material } = searchParams; // Direct destructuring
 
   // Fetch all products using the getter function
