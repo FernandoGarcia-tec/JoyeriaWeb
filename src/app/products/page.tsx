@@ -10,14 +10,14 @@ export const metadata = {
 };
 
 interface ProductsPageProps {
-  searchParams?: {
+  searchParams: { // searchParams object is always present, its properties are optional
     category?: string;
     material?: string;
   };
 }
 
 export default function ProductsPage({ searchParams }: ProductsPageProps) {
-  const { category, material } = searchParams || {};
+  const { category, material } = searchParams; // Direct destructuring
 
   // Fetch all products using the getter function
   const allProducts = getAllProducts();
