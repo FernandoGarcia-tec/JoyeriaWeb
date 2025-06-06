@@ -2,7 +2,7 @@
 'use client';
 
 import { useActionState } from 'react'; 
-import { useFormStatus } from 'react-dom'; // Corrected import for useFormStatus
+import { useFormStatus } from 'react-dom';
 import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,6 +16,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AlertCircle } from 'lucide-react';
+import Image from 'next/image';
+
 
 interface ProductFormProps {
   product?: Product | null; // Product for editing, null/undefined for creating
@@ -36,11 +38,17 @@ export function ProductForm({ product }: ProductFormProps) {
   const [productCategories, setProductCategories] = useState<string[]>([]);
   const [productMaterials, setProductMaterials] = useState<string[]>([]);
   const { toast } = useToast();
+  const [imagePreview, setImagePreview] = useState<string | null>(product?.imageUrl || null);
 
   useEffect(() => {
     setProductCategories(allCategories.map(c => c.name));
-    setProductMaterials(getMaterials()); // In a real app, materials might be predefined or fetched
-  }, []);
+    setProductMaterials(getMaterials());
+    if (product?.imageUrl) {
+      setImagePreview(product.imageUrl);
+    } else if (!product) {
+      setImagePreview('https://placehold.co/600x400.png'); // Default for new products
+    }
+  }, [product]);
 
   const action = product ? updateProductAction.bind(null, product.id) : addProductAction;
   const [state, formAction] = useActionState(action, initialState); 
@@ -51,8 +59,36 @@ export function ProductForm({ product }: ProductFormProps) {
         title: product ? "Product Updated" : "Product Added",
         description: state.message,
       });
+      if (!product && state.product === undefined) { // Successfully added new product
+        // Reset form fields visually for new product form if needed, though useActionState handles state reset
+        setImagePreview('https://placehold.co/600x400.png');
+      } else if (product && state.product?.imageUrl) {
+        setImagePreview(state.product.imageUrl);
+      }
+    } else if (state.message && state.errors) { // Error message
+        // No specific toast for field errors, alert handles it. Toast for _form errors.
+        if (state.errors._form) {
+            toast({
+                title: "Error",
+                description: state.message || state.errors._form.join(', '),
+                variant: "destructive",
+            });
+        }
     }
   }, [state, toast, product]);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setImagePreview(product?.imageUrl || 'https://placehold.co/600x400.png'); // Revert to original or placeholder
+    }
+  };
 
 
   return (
@@ -63,10 +99,10 @@ export function ProductForm({ product }: ProductFormProps) {
       </CardHeader>
       <CardContent>
         <form action={formAction} className="space-y-6">
-          {state.message && state.errors && Object.keys(state.errors).length > 0 && !state.errors._form && ( // Ensure _form errors are not shown here if specific field errors exist
+          {state.message && state.errors && Object.keys(state.errors).length > 0 && !state.errors._form && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
+              <AlertTitle>Input Error</AlertTitle>
               <AlertDescription>{state.message}</AlertDescription>
             </Alert>
           )}
@@ -111,8 +147,20 @@ export function ProductForm({ product }: ProductFormProps) {
           </div>
           
           <div>
-            <Label htmlFor="imageUrl">Image URL</Label>
-            <Input id="imageUrl" name="imageUrl" defaultValue={product?.imageUrl || state.product?.imageUrl || 'https://placehold.co/600x400.png'} required className="mt-1" />
+            <Label htmlFor="imageFile">Product Image</Label>
+            <Input 
+              id="imageFile" 
+              name="imageFile" 
+              type="file" 
+              accept="image/png, image/jpeg, image/gif, image/webp" 
+              className="mt-1 file:text-primary file:font-semibold file:bg-primary/10 file:border-primary/20 hover:file:bg-primary/20"
+              onChange={handleFileChange}
+            />
+            {imagePreview && (
+              <div className="mt-4 relative w-full aspect-video rounded-md overflow-hidden border">
+                <Image src={imagePreview} alt="Image Preview" layout="fill" objectFit="contain" data-ai-hint="product preview" />
+              </div>
+            )}
             {state.errors?.imageUrl && <p className="text-sm text-destructive mt-1">{state.errors.imageUrl.join(', ')}</p>}
           </div>
           
@@ -124,7 +172,6 @@ export function ProductForm({ product }: ProductFormProps) {
                   <SelectValue placeholder="Select material" />
                 </SelectTrigger>
                 <SelectContent>
-                  {/* Dynamically populate materials or use a predefined list */}
                   {['Gold', 'Silver', 'Platinum', 'Rose Gold', 'White Gold', ...productMaterials.filter(m => !['Gold', 'Silver', 'Platinum', 'Rose Gold', 'White Gold'].includes(m))].map(mat => <SelectItem key={mat} value={mat}>{mat}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -150,13 +197,6 @@ export function ProductForm({ product }: ProductFormProps) {
             </div>
           </div>
           
-          {/* Placeholder for image upload - not implemented */}
-          <div>
-            <Label htmlFor="imageUpload">Upload Image (Optional)</Label>
-            <Input id="imageUpload" name="imageUpload" type="file" className="mt-1 file:text-primary file:font-semibold file:bg-primary/10 file:border-primary/20 hover:file:bg-primary/20" />
-            <p className="text-xs text-muted-foreground mt-1">Actual image upload functionality is not implemented in this scaffold. Please use Image URL field.</p>
-          </div>
-
           <SubmitButton isEditing={!!product} />
         </form>
       </CardContent>
