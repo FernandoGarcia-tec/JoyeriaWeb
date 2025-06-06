@@ -104,40 +104,54 @@ const initialProductsData: Product[] = [
   },
 ];
 
-// Internal mutable array for products. Not exported directly.
-let products: Product[] = [...initialProductsData];
+// Use globalThis for the products array to ensure singleton behavior in dev
+declare global {
+  // eslint-disable-next-line no-var
+  var __products_store__: Product[] | undefined;
+}
+
+if (process.env.NODE_ENV === 'production') {
+  globalThis.__products_store__ = [...initialProductsData];
+} else {
+  if (!globalThis.__products_store__) {
+    globalThis.__products_store__ = [...initialProductsData];
+  }
+}
+
+const productsStore = globalThis.__products_store__!;
+
 
 export const getAllProducts = (): Product[] => {
-  return [...products]; // Return a copy to prevent external mutation of the copy
+  return [...productsStore]; // Return a copy to prevent external mutation of the copy
 };
 
 export const getProductById = (id: string): Product | undefined => {
-  const product = products.find(p => p.id === id);
+  const product = productsStore.find(p => p.id === id);
   return product ? { ...product } : undefined; // Return a copy
 };
 
 export const addProduct = (productData: Omit<Product, 'id'>): Product => {
   const newProduct: Product = { ...productData, id: `prod${Date.now()}` };
-  products.push(newProduct); // Mutates the internal array
+  productsStore.push(newProduct); // Mutates the global store
   return { ...newProduct }; // Return a copy
 };
 
 export const updateProduct = (id: string, updates: Partial<Product>): Product | undefined => {
-  const productIndex = products.findIndex(p => p.id === id);
+  const productIndex = productsStore.findIndex(p => p.id === id);
   if (productIndex === -1) return undefined;
-  products[productIndex] = { ...products[productIndex], ...updates }; // Mutates the internal array
-  return { ...products[productIndex] }; // Return a copy
+  productsStore[productIndex] = { ...productsStore[productIndex], ...updates }; // Mutates the global store
+  return { ...productsStore[productIndex] }; // Return a copy
 };
 
 export const deleteProduct = (id: string): boolean => {
-  const productIndex = products.findIndex(p => p.id === id);
+  const productIndex = productsStore.findIndex(p => p.id === id);
   if (productIndex === -1) return false;
-  products.splice(productIndex, 1); // Mutates the internal array in place
+  productsStore.splice(productIndex, 1); // Mutates the global store in place
   return true;
 };
 
 export const getMaterials = (): string[] => {
-  // Operates on the current state of the internal products array
-  const materials = new Set(products.map(p => p.material));
+  // Operates on the current state of the global products store
+  const materials = new Set(productsStore.map(p => p.material));
   return Array.from(materials);
 };
