@@ -1,3 +1,4 @@
+
 import type { Product, Category } from './types';
 
 export const categories: Category[] = [
@@ -6,32 +7,29 @@ export const categories: Category[] = [
     name: 'Necklaces',
     imageUrl: 'https://placehold.co/400x300/E6E6FA/9400D3?text=Necklace',
     description: 'Adorn your neck with our stunning collection of necklaces, from delicate pendants to statement pieces.',
-    // data-ai-hint added in component
   },
   {
     id: 'cat2',
     name: 'Rings',
     imageUrl: 'https://placehold.co/400x300/E6E6FA/9400D3?text=Ring',
     description: 'Find the perfect ring to symbolize love, commitment, or simply to elevate your style.',
-    // data-ai-hint added in component
   },
   {
     id: 'cat3',
     name: 'Earrings',
     imageUrl: 'https://placehold.co/400x300/E6E6FA/9400D3?text=Earrings',
     description: 'From elegant studs to glamorous drops, our earrings are designed to make you shine.',
-    // data-ai-hint added in component
   },
   {
     id: 'cat4',
     name: 'Bracelets',
     imageUrl: 'https://placehold.co/400x300/E6E6FA/9400D3?text=Bracelet',
     description: 'Grace your wrist with our exquisite bracelets, perfect for any occasion.',
-    // data-ai-hint added in component
   },
 ];
 
-export const products: Product[] = [
+// This is the initial static data for products.
+const initialProductsData: Product[] = [
   {
     id: 'prod1',
     name: 'Seraphina Diamond Necklace',
@@ -43,7 +41,6 @@ export const products: Product[] = [
     gemstones: 'Diamond, Sapphire',
     style: 'Classic',
     occasion: 'Gala',
-    // data-ai-hint added in component
   },
   {
     id: 'prod2',
@@ -56,7 +53,6 @@ export const products: Product[] = [
     gemstones: 'Sapphire, Diamond',
     style: 'Vintage',
     occasion: 'Engagement',
-    // data-ai-hint added in component
   },
   {
     id: 'prod3',
@@ -69,7 +65,6 @@ export const products: Product[] = [
     gemstones: 'Emerald, Diamond',
     style: 'Elegant',
     occasion: 'Evening Wear',
-    // data-ai-hint added in component
   },
   {
     id: 'prod4',
@@ -82,7 +77,6 @@ export const products: Product[] = [
     gemstones: 'Ruby',
     style: 'Modern',
     occasion: 'Party',
-    // data-ai-hint added in component
   },
   {
     id: 'prod5',
@@ -95,7 +89,6 @@ export const products: Product[] = [
     gemstones: 'Pearl',
     style: 'Minimalist',
     occasion: 'Everyday',
-    // data-ai-hint added in component
   },
   {
     id: 'prod6',
@@ -108,38 +101,39 @@ export const products: Product[] = [
     gemstones: 'None',
     style: 'Classic',
     occasion: 'Everyday',
-    // data-ai-hint added in component
   },
 ];
 
-// This is a hack for the scaffold to simulate a database for admin operations.
-// In a real app, this would be a database.
-export let mockProductsDB = [...products];
+// This `products` array is the single source of truth. It's mutable and exported.
+// All parts of the application (admin and public) will use this array.
+export let products: Product[] = [...initialProductsData];
 
 export const getProductById = (id: string): Product | undefined => {
-  return mockProductsDB.find(p => p.id === id);
+  return products.find(p => p.id === id);
 };
 
-export const addProduct = (product: Omit<Product, 'id'>): Product => {
-  const newProduct: Product = { ...product, id: `prod${Date.now()}` };
-  mockProductsDB.push(newProduct);
+export const addProduct = (productData: Omit<Product, 'id'>): Product => {
+  const newProduct: Product = { ...productData, id: `prod${Date.now()}` };
+  products.push(newProduct);
   return newProduct;
 };
 
 export const updateProduct = (id: string, updates: Partial<Product>): Product | undefined => {
-  const productIndex = mockProductsDB.findIndex(p => p.id === id);
+  const productIndex = products.findIndex(p => p.id === id);
   if (productIndex === -1) return undefined;
-  mockProductsDB[productIndex] = { ...mockProductsDB[productIndex], ...updates };
-  return mockProductsDB[productIndex];
+  products[productIndex] = { ...products[productIndex], ...updates };
+  return products[productIndex];
 };
 
 export const deleteProduct = (id: string): boolean => {
-  const initialLength = mockProductsDB.length;
-  mockProductsDB = mockProductsDB.filter(p => p.id !== id);
-  return mockProductsDB.length < initialLength;
+  const initialLength = products.length;
+  // Reassign `products` to a new filtered array.
+  // This ensures that modules get the new reference upon revalidation.
+  products = products.filter(p => p.id !== id);
+  return products.length < initialLength;
 };
 
 export const getMaterials = (): string[] => {
-  const materials = new Set(mockProductsDB.map(p => p.material));
+  const materials = new Set(products.map(p => p.material));
   return Array.from(materials);
 };
