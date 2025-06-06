@@ -104,36 +104,40 @@ const initialProductsData: Product[] = [
   },
 ];
 
-// This `products` array is the single source of truth. It's mutable and exported.
-// All parts of the application (admin and public) will use this array.
-export let products: Product[] = [...initialProductsData];
+// Internal mutable array for products. Not exported directly.
+let products: Product[] = [...initialProductsData];
+
+export const getAllProducts = (): Product[] => {
+  return [...products]; // Return a copy to prevent external mutation of the copy
+};
 
 export const getProductById = (id: string): Product | undefined => {
-  return products.find(p => p.id === id);
+  const product = products.find(p => p.id === id);
+  return product ? { ...product } : undefined; // Return a copy
 };
 
 export const addProduct = (productData: Omit<Product, 'id'>): Product => {
   const newProduct: Product = { ...productData, id: `prod${Date.now()}` };
-  products.push(newProduct);
-  return newProduct;
+  products.push(newProduct); // Mutates the internal array
+  return { ...newProduct }; // Return a copy
 };
 
 export const updateProduct = (id: string, updates: Partial<Product>): Product | undefined => {
   const productIndex = products.findIndex(p => p.id === id);
   if (productIndex === -1) return undefined;
-  products[productIndex] = { ...products[productIndex], ...updates };
-  return products[productIndex];
+  products[productIndex] = { ...products[productIndex], ...updates }; // Mutates the internal array
+  return { ...products[productIndex] }; // Return a copy
 };
 
 export const deleteProduct = (id: string): boolean => {
-  const initialLength = products.length;
-  // Reassign `products` to a new filtered array.
-  // This ensures that modules get the new reference upon revalidation.
-  products = products.filter(p => p.id !== id);
-  return products.length < initialLength;
+  const productIndex = products.findIndex(p => p.id === id);
+  if (productIndex === -1) return false;
+  products.splice(productIndex, 1); // Mutates the internal array in place
+  return true;
 };
 
 export const getMaterials = (): string[] => {
+  // Operates on the current state of the internal products array
   const materials = new Set(products.map(p => p.material));
   return Array.from(materials);
 };

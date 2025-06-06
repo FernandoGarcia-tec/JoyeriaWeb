@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
-import { products as allProducts } from '@/lib/data';
+import { getProductById } from '@/lib/data'; // Use getProductById
 import type { Product } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +24,8 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (productId) {
-      const foundProduct = allProducts.find((p) => p.id === productId);
+      // Fetch the specific product using getProductById
+      const foundProduct = getProductById(productId);
       setProduct(foundProduct || null);
       setQuantity(1); // Reset quantity when product changes
     }

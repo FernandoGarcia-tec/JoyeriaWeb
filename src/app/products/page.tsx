@@ -1,4 +1,5 @@
-import { products as allProducts } from '@/lib/data';
+
+import { getAllProducts } from '@/lib/data'; // Use the getter function
 import { ProductCard } from '@/components/products/product-card';
 import { ProductFilters } from '@/components/products/product-filters';
 import type { Product } from '@/lib/types';
@@ -18,6 +19,8 @@ interface ProductsPageProps {
 export default function ProductsPage({ searchParams }: ProductsPageProps) {
   const { category, material } = searchParams || {};
 
+  // Fetch all products using the getter function
+  const allProducts = getAllProducts();
   let filteredProducts: Product[] = allProducts;
 
   if (category) {

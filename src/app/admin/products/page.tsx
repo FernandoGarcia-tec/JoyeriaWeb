@@ -1,5 +1,5 @@
 
-import { products as allProductsFromDB } from '@/lib/data'; // Use the unified, mutable products array
+import { getAllProducts } from '@/lib/data'; // Use the getter function
 import { ProductsTable } from '@/components/admin/products-table';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -11,11 +11,9 @@ export const metadata = {
 };
 
 export default async function AdminProductsPage() {
-  // In a real app, products would be fetched from a database.
-  // We use the mutable `products` array (aliased as allProductsFromDB) from data.ts here.
-  // For RSC, this will show the current state of `allProductsFromDB` at build/request time.
-  // Client component ProductsTable will handle dynamic updates via useState if needed for client-side interactions after delete.
-  const productsForTable = [...allProductsFromDB]; // Create a shallow copy to pass to client component
+  // Fetch products using the getter function.
+  // This ensures we get the current state of the mutable products array from data.ts.
+  const productsForTable = getAllProducts();
 
   return (
     <div className="space-y-6">
