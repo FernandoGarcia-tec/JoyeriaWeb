@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react'; // Added useEffect
 
 interface ProductsTableProps {
   products: Product[];
@@ -38,6 +38,11 @@ export function ProductsTable({ products: initialProducts }: ProductsTableProps)
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [products, setProducts] = useState(initialProducts);
+
+  // Sync local state with initialProducts prop when it changes
+  useEffect(() => {
+    setProducts(initialProducts);
+  }, [initialProducts]);
 
 
   const handleDelete = async (id: string) => {
