@@ -1,10 +1,12 @@
+
 'use client';
 
 import Link from 'next/link';
-import { Gem, ShoppingCart, UserCog, Menu } from 'lucide-react';
+import { Gem, ShoppingCart, UserCog, Menu, LogIn, UserPlus, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/cart-context';
-import { usePathname } from 'next/navigation';
+import { useAuth } from '@/contexts/auth-context'; // Import useAuth
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Sheet,
   SheetContent,
@@ -12,16 +14,11 @@ import {
 } from "@/components/ui/sheet";
 import { useState, useEffect } from 'react';
 
-const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/products', label: 'Products' },
-  { href: '/cart', label: 'Cart' },
-  { href: '/admin', label: 'Admin' },
-];
-
 export function SiteHeader() {
   const { totalItems } = useCart();
+  const { currentUser, logout, isLoading } = useAuth(); // Get auth state and functions
   const pathname = usePathname();
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
@@ -29,18 +26,31 @@ export function SiteHeader() {
     setIsClient(true);
   }, []);
 
+  const handleLogout = () => {
+    logout();
+    setIsMobileMenuOpen(false);
+    router.push('/'); // Redirect to home after logout
+  };
 
-  const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
-    <Link href={href} passHref>
-      <Button
-        variant={pathname === href ? 'secondary' : 'ghost'}
-        className="text-sm font-medium"
-        onClick={() => setIsMobileMenuOpen(false)}
-      >
+  const NavLink = ({ href, children, icon, action }: { href?: string; children: React.ReactNode; icon?: React.ElementType; action?: () => void; }) => {
+    const IconComponent = icon;
+    const commonProps = {
+      variant: pathname === href ? 'secondary' : 'ghost' as any,
+      className: "text-sm font-medium",
+      onClick: () => {
+        if (action) action();
+        else if (href) router.push(href);
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    return (
+      <Button {...commonProps}>
+        {IconComponent && <IconComponent className="h-5 w-5 mr-1" />}
         {children}
       </Button>
-    </Link>
-  );
+    );
+  };
   
   const CartLink = () => (
      <Link href="/cart" passHref>
@@ -56,6 +66,26 @@ export function SiteHeader() {
       </Link>
   );
 
+  const AuthNavLinks = () => {
+    if (isLoading && !isClient) return <div className="h-8 w-24 bg-muted rounded animate-pulse"></div>; // Placeholder for loading
+    if (currentUser) {
+      return (
+        <>
+          {currentUser.role === 'admin' && (
+            <NavLink href="/admin" icon={UserCog}>Admin</NavLink>
+          )}
+          <NavLink action={handleLogout} icon={LogOut}>Logout</NavLink>
+        </>
+      );
+    }
+    return (
+      <>
+        <NavLink href="/login" icon={LogIn}>Login</NavLink>
+        <NavLink href="/register" icon={UserPlus}>Register</NavLink>
+      </>
+    );
+  };
+
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -66,17 +96,16 @@ export function SiteHeader() {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-2">
+        <nav className="hidden md:flex items-center space-x-1">
           <NavLink href="/">Home</NavLink>
           <NavLink href="/products">Products</NavLink>
-          <NavLink href="/admin">
-            <UserCog className="h-5 w-5 mr-1" /> Admin
-          </NavLink>
+          <AuthNavLinks />
           <CartLink/>
         </nav>
 
         {/* Mobile Navigation */}
-        <div className="md:hidden">
+        <div className="md:hidden flex items-center">
+           <CartLink/> {/* Show cart icon outside sheet on mobile too */}
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -85,13 +114,11 @@ export function SiteHeader() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-3/4 p-6 bg-background">
-              <nav className="flex flex-col space-y-4">
+              <nav className="flex flex-col space-y-3">
                 <NavLink href="/">Home</NavLink>
                 <NavLink href="/products">Products</NavLink>
-                 <NavLink href="/admin">
-                  <UserCog className="h-5 w-5 mr-1" /> Admin
-                </NavLink>
-                <CartLink/>
+                {/* <NavLink href="/cart">Cart</NavLink> Cart is outside */}
+                <AuthNavLinks />
               </nav>
             </SheetContent>
           </Sheet>

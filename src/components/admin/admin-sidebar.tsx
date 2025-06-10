@@ -1,15 +1,19 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Package, Sparkles, LayoutDashboard } from 'lucide-react';
+import { Package, Sparkles, LayoutDashboard, ImageIcon, ImagePlay, LayoutList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 const adminNavItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/products', label: 'Manage Products', icon: Package },
+  { href: '/admin/categories', label: 'Manage Categories', icon: LayoutList },
   { href: '/admin/description-generator', label: 'AI Descriptions', icon: Sparkles },
+  { href: '/admin/category-images', label: 'Category Images', icon: ImageIcon },
+  { href: '/admin/announcements', label: 'Announcements', icon: ImagePlay },
 ];
 
 export function AdminSidebar() {

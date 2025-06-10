@@ -1,7 +1,7 @@
 
 import type { Product, Category } from './types';
 
-export const categories: Category[] = [
+export const initialCategoriesData: Category[] = [
   {
     id: 'cat1',
     name: 'Necklaces',
@@ -27,6 +27,61 @@ export const categories: Category[] = [
     description: 'Grace your wrist with our exquisite bracelets, perfect for any occasion.',
   },
 ];
+
+// Use globalThis for categories array
+declare global {
+  // eslint-disable-next-line no-var
+  var __categories_store__: Category[];
+}
+
+if (process.env.NODE_ENV === 'production') {
+  globalThis.__categories_store__ = [...initialCategoriesData];
+} else {
+  // In development, re-initialize if it's undefined OR if it's defined but empty (and shouldn't be, i.e. initial data exists).
+  if (!globalThis.__categories_store__ || (globalThis.__categories_store__ && globalThis.__categories_store__.length === 0 && initialCategoriesData.length > 0)) {
+    globalThis.__categories_store__ = [...initialCategoriesData];
+  }
+}
+const categoriesStore = globalThis.__categories_store__!;
+
+
+export const getAllCategories = (): Category[] => {
+  // Ensure store is populated if accessed and found empty in dev
+  if (process.env.NODE_ENV !== 'production' && categoriesStore.length === 0 && initialCategoriesData.length > 0) {
+    categoriesStore.push(...initialCategoriesData.filter(ic => !categoriesStore.find(cs => cs.id === ic.id)));
+  }
+  return [...categoriesStore];
+};
+
+export const getCategoryById = (id: string): Category | undefined => {
+  // Ensure store is populated if accessed and found empty in dev (helps if getById is first access)
+  if (process.env.NODE_ENV !== 'production' && categoriesStore.length === 0 && initialCategoriesData.length > 0) {
+     categoriesStore.push(...initialCategoriesData.filter(ic => !categoriesStore.find(cs => cs.id === ic.id)));
+  }
+  const category = categoriesStore.find(c => c.id === id);
+  return category ? { ...category } : undefined;
+};
+
+export const addCategory = (categoryData: Omit<Category, 'id'>): Category => {
+  const newCategory: Category = { ...categoryData, id: `cat${Date.now()}` };
+  categoriesStore.push(newCategory);
+  return { ...newCategory };
+};
+
+export const updateCategory = (id: string, updates: Partial<Category>): Category | undefined => {
+  const categoryIndex = categoriesStore.findIndex(c => c.id === id);
+  if (categoryIndex === -1) return undefined;
+  categoriesStore[categoryIndex] = { ...categoriesStore[categoryIndex], ...updates };
+  return { ...categoriesStore[categoryIndex] };
+};
+
+export const deleteCategory = (id: string): boolean => {
+  const categoryIndex = categoriesStore.findIndex(c => c.id === id);
+  if (categoryIndex === -1) return false;
+  categoriesStore.splice(categoryIndex, 1);
+  return true;
+};
+
 
 // This is the initial static data for products.
 const initialProductsData: Product[] = [
@@ -107,51 +162,66 @@ const initialProductsData: Product[] = [
 // Use globalThis for the products array to ensure singleton behavior in dev
 declare global {
   // eslint-disable-next-line no-var
-  var __products_store__: Product[] | undefined;
+  var __products_store__: Product[];
 }
 
 if (process.env.NODE_ENV === 'production') {
   globalThis.__products_store__ = [...initialProductsData];
 } else {
-  if (!globalThis.__products_store__) {
+  // In development, re-initialize if it's undefined OR if it's defined but empty (and shouldn't be).
+  if (!globalThis.__products_store__ || (globalThis.__products_store__ && globalThis.__products_store__.length === 0 && initialProductsData.length > 0)) {
     globalThis.__products_store__ = [...initialProductsData];
   }
 }
-
 const productsStore = globalThis.__products_store__!;
 
 
 export const getAllProducts = (): Product[] => {
-  return [...productsStore]; // Return a copy to prevent external mutation of the copy
+  // Ensure store is populated if accessed and found empty in dev
+  if (process.env.NODE_ENV !== 'production' && productsStore.length === 0 && initialProductsData.length > 0) {
+     productsStore.push(...initialProductsData.filter(ip => !productsStore.find(ps => ps.id === ip.id)));
+  }
+  return [...productsStore];
 };
 
 export const getProductById = (id: string): Product | undefined => {
+  // Ensure store is populated if accessed and found empty in dev
+  if (process.env.NODE_ENV !== 'production' && productsStore.length === 0 && initialProductsData.length > 0) {
+    productsStore.push(...initialProductsData.filter(ip => !productsStore.find(ps => ps.id === ip.id)));
+  }
   const product = productsStore.find(p => p.id === id);
-  return product ? { ...product } : undefined; // Return a copy
+  return product ? { ...product } : undefined;
 };
 
 export const addProduct = (productData: Omit<Product, 'id'>): Product => {
   const newProduct: Product = { ...productData, id: `prod${Date.now()}` };
-  productsStore.push(newProduct); // Mutates the global store
-  return { ...newProduct }; // Return a copy
+  productsStore.push(newProduct);
+  return { ...newProduct };
 };
 
 export const updateProduct = (id: string, updates: Partial<Product>): Product | undefined => {
   const productIndex = productsStore.findIndex(p => p.id === id);
   if (productIndex === -1) return undefined;
-  productsStore[productIndex] = { ...productsStore[productIndex], ...updates }; // Mutates the global store
-  return { ...productsStore[productIndex] }; // Return a copy
+  productsStore[productIndex] = { ...productsStore[productIndex], ...updates };
+  return { ...productsStore[productIndex] };
 };
 
 export const deleteProduct = (id: string): boolean => {
   const productIndex = productsStore.findIndex(p => p.id === id);
   if (productIndex === -1) return false;
-  productsStore.splice(productIndex, 1); // Mutates the global store in place
+  productsStore.splice(productIndex, 1);
   return true;
 };
 
 export const getMaterials = (): string[] => {
-  // Operates on the current state of the global products store
+  // Ensure store is populated for this calculation
+  if (process.env.NODE_ENV !== 'production' && productsStore.length === 0 && initialProductsData.length > 0) {
+    productsStore.push(...initialProductsData.filter(ip => !productsStore.find(ps => ps.id === ip.id)));
+  }
   const materials = new Set(productsStore.map(p => p.material));
   return Array.from(materials);
 };
+
+// Export categories array directly for use on the homepage and other places
+// This will now use the potentially re-initialized categoriesStore
+export const categories: Category[] = getAllCategories();

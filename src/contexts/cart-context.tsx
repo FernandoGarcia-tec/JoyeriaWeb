@@ -1,8 +1,10 @@
+
 'use client';
 
 import type { CartItem, Product } from '@/lib/types';
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/auth-context'; // Import useAuth
 
 interface CartContextType {
   items: CartItem[];
@@ -16,24 +18,76 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const CART_STORAGE_KEY = 'gleamGalleryCart';
+// Function to generate a dynamic storage key
+const getCartStorageKey = (userId: string | null | undefined): string => {
+  if (userId) {
+    return `gleamGalleryCart_${userId}`;
+  }
+  return 'gleamGalleryCart_guest'; // Key for guest users or when auth is loading
+};
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const { toast } = useToast();
+  const { currentUser, isLoading: isAuthLoading } = useAuth(); // Get currentUser and auth loading state
 
+  // Effect to load cart when currentUser changes or on initial auth resolution
   useEffect(() => {
-    const storedCart = localStorage.getItem(CART_STORAGE_KEY);
+    if (isAuthLoading) {
+      // Still waiting for auth status to be determined.
+      // Optionally, load guest cart here or wait. For now, let's wait to avoid flash of guest cart if user is logged in.
+      // Or, could load guest cart and then it will be replaced if user is found.
+      // Let's load guest cart by default and let it be overwritten if user logs in.
+      const guestKey = getCartStorageKey(null);
+      const storedGuestCart = localStorage.getItem(guestKey);
+      if (storedGuestCart) {
+        try {
+          setItems(JSON.parse(storedGuestCart));
+        } catch (e) {
+          console.error("Failed to parse guest cart from localStorage on init:", e);
+          localStorage.removeItem(guestKey);
+        }
+      } else {
+        setItems([]);
+      }
+      return;
+    }
+
+    const storageKey = getCartStorageKey(currentUser?.id);
+    const storedCart = localStorage.getItem(storageKey);
+
     if (storedCart) {
-      setItems(JSON.parse(storedCart));
+      try {
+        setItems(JSON.parse(storedCart));
+      } catch (e) {
+        console.error(`Failed to parse cart from localStorage for key ${storageKey}:`, e);
+        setItems([]);
+        localStorage.removeItem(storageKey); // Clear corrupted data
+      }
+    } else {
+      setItems([]); // Clear items if no cart found for this user/guest, or on switch
     }
-  }, []);
+  }, [currentUser, isAuthLoading]);
 
+  // Effect to save cart when items or currentUser changes
   useEffect(() => {
-    if (items.length > 0 || localStorage.getItem(CART_STORAGE_KEY)) { // only write if items exist or cart was previously populated
-        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+    // Don't save if auth is still loading, as currentUser might not be stable yet
+    if (isAuthLoading && currentUser === undefined) { 
+        // If auth is loading and user is truly undefined (not null),
+        // we might be in a transient state. Let's wait for auth to settle.
+        // However, if items change due to user action, we probably should save to guest cart.
+        // This logic can be tricky. For now, let's ensure we use the correct key.
     }
-  }, [items]);
+
+    const storageKey = getCartStorageKey(currentUser?.id);
+
+    if (items.length > 0) {
+      localStorage.setItem(storageKey, JSON.stringify(items));
+    } else {
+      // If items array is empty, remove its corresponding key from localStorage.
+      localStorage.removeItem(storageKey);
+    }
+  }, [items, currentUser, isAuthLoading]);
 
   const addItem = (product: Product, quantity: number = 1) => {
     setItems(prevItems => {
@@ -53,7 +107,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const removeItem = (productId: string) => {
     setItems(prevItems => prevItems.filter(item => item.id !== productId));
-     toast({
+    toast({
       title: "Item Removed",
       description: `Item has been removed from your cart.`,
       variant: "destructive"
@@ -72,7 +126,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const clearCart = () => {
     setItems([]);
-    localStorage.removeItem(CART_STORAGE_KEY);
+    // The useEffect for saving will handle removing it from localStorage based on current user
   };
 
   const totalPrice = items.reduce((total, item) => total + item.price * item.quantity, 0);

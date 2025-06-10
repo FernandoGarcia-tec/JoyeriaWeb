@@ -1,11 +1,15 @@
+
 import Link from 'next/link';
 import Image from 'next/image';
-import { categories } from '@/lib/data';
+import { getAllCategories } from '@/lib/data'; // Import the function
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight } from 'lucide-react';
+import type { Category } from '@/lib/types';
 
 export default function HomePage() {
+  const categories: Category[] = getAllCategories(); // Call the function to get current categories
+
   return (
     <div className="space-y-12">
       <section className="text-center py-12 bg-gradient-to-br from-background to-purple-100 rounded-lg shadow-lg">
